@@ -1,0 +1,10 @@
+{
+  "name": "fastrack",
+  "version": "0.0.1",
+  "dependencies": {
+	"raven": "https://github.com/ehfeng/raven-node",
+    "zlib": "^1.0.5",
+    "vm2": "^3.6.3",
+    "sleep": "^5.2.3"
+  }
+}
