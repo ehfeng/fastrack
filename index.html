@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.39.2/codemirror.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.39.2/codemirror.css">
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script type="text/javascript" src="https://codemirror.net/mode/javascript/javascript.js"></script>
+	<script type="text/javascript" src="https://codemirror.net/mode/python/python.js"></script>
+</head>
+<body>
+<h1>Run Python</h1>
+<div>
+	<h3>DSNs</h3>
+	<code>https://c3a66f7b59044173b7f0e7cf8367a6a5@sentry.io/1257305</code>
+	<br>
+	<code>https://c3a66f7b59044173b7f0e7cf8367a6a5:a9b80f66c31d476db3ae2cd4fd8279ab@sentry.io/1257305</code>
+</div>
+<br>
+
+<textarea id="code">
+from raven import Client
+
+client = Client('https://c3a66f7b59044173b7f0e7cf8367a6a5:a9b80f66c31d476db3ae2cd4fd8279ab@sentry.io/1257305')
+
+try:
+    1 / 0
+except ZeroDivisionError:
+    client.captureException()
+
+print('HA, it works here too!')
+</textarea>
+
+<button id="button">Run</button>
+<br>
+<h3>Result</h3>
+<div>Event ID: <span id="event_id"></span></div>
+<h4>Logs</h4>
+<div id="result"></div>
+
+<script type="text/javascript">
+	var language = "python";
+
+
+	var language_function = {
+		python: 'https://us-central1-hackweek-fastrack.cloudfunctions.net/python-eval',
+		javascript: 'https://us-central1-hackweek-fastrack.cloudfunctions.net/node-eval'
+	}
+
+  var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      matchBrackets: true,
+      mode: language
+  });
+  $('#button').on('click', function(e) {
+  	$.ajax({
+  		method: "POST",
+  		headers: {'Content-Type': 'application/json'},
+  		url: language_function[language],
+  		data: JSON.stringify({email: 'g@sentry.io', code: editor.getValue()}),
+  		dataType: "json"
+  	}).done(function(msg) {
+  		console.log(msg);
+  		$('#result').text(msg.logs);
+  		$('#event_id').text(msg.event_id);
+  	})
+  });
+</script>
+
+</body>
+</html>
