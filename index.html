@@ -10,7 +10,7 @@
 	<script type="text/javascript" src="https://codemirror.net/mode/python/python.js"></script>
 </head>
 <body>
-<h1>Run Python</h1>
+<h1>Run Python (logged out experience)</h1>
 <div>
 	<h3>DSNs</h3>
 	<code>https://c3a66f7b59044173b7f0e7cf8367a6a5@sentry.io/1257305</code>
@@ -22,7 +22,7 @@
 <textarea id="code">
 from raven import Client
 
-client = Client('https://c3a66f7b59044173b7f0e7cf8367a6a5:a9b80f66c31d476db3ae2cd4fd8279ab@sentry.io/1257305')
+client = Client('https://<key>:<secret>@fastrack.ngrok.io/<project>')
 
 try:
     1 / 0
@@ -31,11 +31,14 @@ except ZeroDivisionError:
 
 print('HA, it works here too!')
 </textarea>
-
+<div>
+  <input id="email" placeholder="Email Address" />
+</div>
+<br>
 <button id="button">Run</button>
 <br>
 <h3>Result</h3>
-<div>Event ID: <span id="event_id"></span></div>
+<div>Event ID: <a id="event_id"></a></div>
 <h4>Logs</h4>
 <div id="result"></div>
 
@@ -58,12 +61,13 @@ print('HA, it works here too!')
   		method: "POST",
   		headers: {'Content-Type': 'application/json'},
   		url: language_function[language],
-  		data: JSON.stringify({email: 'g@sentry.io', code: editor.getValue()}),
+  		data: JSON.stringify({email: $('#email').val(), code: editor.getValue()}),
   		dataType: "json"
   	}).done(function(msg) {
-  		console.log(msg);
   		$('#result').text(msg.logs);
+      let url = "http://dev.getsentry.net:8000/organizations/" + msg.slug + "/event/" + $.trim(msg.event_id) + "/";
   		$('#event_id').text(msg.event_id);
+      $('#event_id').attr('href', url);
   	})
   });
 </script>

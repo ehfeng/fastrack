@@ -4,8 +4,8 @@ import contextlib
 import json
 import re
 
-from flask import make_response
 import requests
+
 
 @contextlib.contextmanager
 def SENTRY_STDOUT_FUNCTION(stdout=None):
@@ -19,12 +19,13 @@ def SENTRY_STDOUT_FUNCTION(stdout=None):
 
 def run(request):
     if request.method == 'OPTIONS':
-        res = make_response()
-        res.headers["Access-Control-Allow-Origin"] = "*"
-        res.headers["Access-Control-Allow-Methods"] = "POST"
-        res.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        res.status_code = 204
-        return res
+        headers = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST",
+            "Access-Control-Allow-Headers": "Content-Type",
+        }
+        status_code = 204
+        return '', 204, headers
 
     assert request.get_json().get('code'), 'request body must have code'
     assert request.get_json().get('slug') or request.get_json().get('email')
@@ -40,9 +41,10 @@ def run(request):
 
         key_re = re.compile('\<key\>')
         secret_re = re.compile('\<secret\>')
+        project_re = re.compile('\<project\>')
         SENTRY_CODE_SNIPPET = key_re.sub(res.json()['public_key'], SENTRY_CODE_SNIPPET)
         SENTRY_CODE_SNIPPET = secret_re.sub(res.json()['secret_key'], SENTRY_CODE_SNIPPET)
-
+        SENTRY_CODE_SNIPPET = project_re.sub(str(res.json()['project_id']), SENTRY_CODE_SNIPPET)
     
     with SENTRY_STDOUT_FUNCTION() as SENTRY_STDOUT_SOCKET:
         exec(compile(SENTRY_CODE_SNIPPET, 'main.py', 'exec'))
@@ -51,8 +53,14 @@ def run(request):
         stdout_list.remove(event_id_item)
     event_id = event_id_item[len('SENTRY_EVENT_ID: ') - 1:]
 
-    res = make_response(json.dumps({'slug': slug, 'event_id': event_id, 'logs': '\n'.join(stdout_list)}), 200)
-    res.headers["Access-Control-Allow-Origin"] = "*"
-    res.headers["Access-Control-Allow-Methods"] = "POST"
-    res.headers["Access-Control-Allow-Headers"] = "Content-Type"
-    return res
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST",
+        "Access-Control-Allow-Headers": "Content-Type",
+    }
+    body = json.dumps({
+        'slug': slug.strip(),
+        'event_id': event_id.strip(),
+        'logs': '\n'.join(stdout_list)
+    })
+    return body, 200, headers
